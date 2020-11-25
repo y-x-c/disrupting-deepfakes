@@ -88,6 +88,8 @@ def get_config():
                         default='out')
     parser.add_argument('--animation_mode', type=str, default='animate_image',
                         choices=['animate_image', 'animate_random_batch'])
+    parser.add_argument('--attack_loss', type=str, default='mse')
+    parser.add_argument('--attack_budget', type=float, default='0.05')
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)

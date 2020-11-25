@@ -388,10 +388,11 @@ class Solver(Utils):
             l1_error, l2_error, min_dist, l0_error = 0.0, 0.0, 0.0, 0.0
             n_dist, n_samples = 0, 0
 
-            pgd_attack = attacks.LinfPGDAttack(model=self.G, device=self.device)
+            pgd_attack = attacks.LinfPGDAttack(model=self.G, device=self.device, attack_loss=self.attack_loss, epsilon=self.attack_budget)
 
             images_to_animate_path = sorted(glob.glob(
                 self.animation_images_dir + '/*'))
+            images_to_animate_path = images_to_animate_path[:50]
 
             for idx, image_path in enumerate(images_to_animate_path):
                 image_to_animate = regular_image_transform(Image.open(image_path)).unsqueeze(0).cuda()
@@ -437,12 +438,14 @@ class Solver(Utils):
                             resulting_images_att, resulting_images_reg, x_adv).cuda()
 
                     save_image((resulting_image+1)/2, os.path.join(self.animation_results_dir,
-                                                                   image_path.split('/')[-1].split('.')[0]
-                                                                   + '_' + reference_expression_images[target_idx]))
-                    if target_idx == 0:
-                        save_image((x_adv+1)/2, os.path.join(self.animation_results_dir,
-                                                                   image_path.split('/')[-1].split('.')[0]
-                                                                   + '_ref.jpg'))
+                        image_path.split('/')[-1].split('.')[0]
+                        + '_' + reference_expression_images[target_idx]))
+                    save_image((resulting_image_noattack+1)/2, os.path.join(self.animation_results_dir,
+                        image_path.split('/')[-1].split('.')[0] + '_'
+                        + reference_expression_images[target_idx] + '_no_attack.jpg'))
+                    save_image((x_adv+1)/2, os.path.join(self.animation_results_dir,
+                        image_path.split('/')[-1].split('.')[0] + '_'
+                        + reference_expression_images[target_idx] + '_pert.jpg'))
 
                     # Compare to ground-truth output
                     l1_error += F.l1_loss(resulting_image, resulting_image_noattack)

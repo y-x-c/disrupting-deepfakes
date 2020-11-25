@@ -110,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_save_dir', type=str, default='stargan/models')
     parser.add_argument('--sample_dir', type=str, default='stargan/samples')
     parser.add_argument('--result_dir', type=str, default='stargan/results')
+    parser.add_argument('--attack_loss', type=str, default='mse')
+    parser.add_argument('--attack_budget', type=float, default='0.05')
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)

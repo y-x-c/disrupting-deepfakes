@@ -5,9 +5,57 @@ from scipy.stats import truncnorm
 
 import torch
 import torch.nn as nn
+import piq
+
+class TVLoss():
+    def __init__(self):
+        self.loss = piq.TVLoss()
+
+    def __call__(self, pred, ref):
+        pred = (pred+1)/2
+        pred = pred.clamp(0, 1)
+        return self.loss(pred)
+
+class NegTVLoss():
+    def __init__(self):
+        self.loss = piq.TVLoss()
+
+    def __call__(self, pred, ref):
+        pred = (pred+1)/2
+        pred = pred.clamp(0, 1)
+        return -self.loss(pred)
+
+class BRISQUELoss():
+    def __init__(self):
+        self.loss = piq.BRISQUELoss()
+
+    def __call__(self, pred, ref):
+        pred = (pred+1)/2
+        pred = pred.clamp(0, 1)
+        return self.loss(pred)
+
+class NEGBRISQUELoss():
+    def __init__(self):
+        self.loss = piq.BRISQUELoss()
+
+    def __call__(self, pred, ref):
+        pred = (pred+1)/2
+        pred = pred.clamp(0, 1)
+        return -self.loss(pred)
+
+class DSSIMLoss():
+    def __init__(self):
+        self.loss = piq.SSIMLoss()
+
+    def __call__(self, pred, ref):
+        pred = (pred+1)/2
+        pred = pred.clamp(0, 1)
+        ref = (ref+1)/2
+        ref = ref.clamp(0, 1)
+        return -(1-self.loss(pred, ref))/2
 
 class LinfPGDAttack(object):
-    def __init__(self, model=None, device=None, epsilon=0.05, k=10, a=0.01):
+    def __init__(self, model=None, device=None, epsilon=0.05, k=10, a=0.01, attack_loss='mse'):
         """
         FGSM, I-FGSM and PGD attacks
         epsilon: magnitude of attack
@@ -18,7 +66,20 @@ class LinfPGDAttack(object):
         self.epsilon = epsilon
         self.k = k
         self.a = a
-        self.loss_fn = nn.MSELoss().to(device)
+
+        if attack_loss == 'mse':
+            self.loss_fn = nn.MSELoss().to(device)
+        elif attack_loss == 'tv':
+            self.loss_fn = TVLoss()
+        elif attack_loss == 'negtv':
+            self.loss_fn = NegTVLoss()
+        elif attack_loss == 'brisque':
+            self.loss_fn = BRISQUELoss()
+        elif attack_loss == 'negbrisque':
+            self.loss_fn = NEGBRISQUELoss()
+        elif attack_loss == 'dssim':
+            self.loss_fn = DSSIMLoss()
+
         self.device = device
 
         # PGD or I-FGSM?

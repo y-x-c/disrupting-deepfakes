@@ -74,6 +74,8 @@ class Solver(object):
         self.sample_step = config.sample_step
         self.model_save_step = config.model_save_step
         self.lr_update_step = config.lr_update_step
+        self.attack_loss = config.attack_loss
+        self.attack_budget = config.attack_budget
 
         # Build the model and tensorboard.
         self.build_model()
@@ -962,7 +964,7 @@ class Solver(object):
             x_real = x_real.to(self.device)
             c_trg_list = self.create_labels(c_org, self.c_dim, self.dataset, self.selected_attrs)
 
-            pgd_attack = attacks.LinfPGDAttack(model=self.G, device=self.device, feat=None)
+            pgd_attack = attacks.LinfPGDAttack(model=self.G, device=self.device, feat=None, attack_loss=self.attack_loss, epsilon=self.attack_budget)
 
             # Translated images.
             x_fake_list = [x_real]
@@ -983,6 +985,13 @@ class Solver(object):
                 # Generate adversarial example
                 x_adv = x_real + perturb
 
+                import cv2
+                # print('before imwrite>>>>>>>>>', x_adv.shape, x_adv.min(), x_adv.max())
+                # cv2.imwrite('/tmp/a.png', ((x_adv[0] + 1) / 2 * 255).add_(0.5).clamp_(0, 255).permute(1,2,0).to('cpu', torch.uint8).numpy())
+
+                # x_adv = torch.tensor(cv2.imread('/tmp/a.png')).to('cuda', torch.float32).permute(2,0,1).unsqueeze(0) / 255 * 2 - 1
+                # print('after imwrite>>>>>>>>>', x_adv.shape, x_adv.min(), x_adv.max())
+
                 # No attack
                 # x_adv = x_real
 
@@ -997,6 +1006,7 @@ class Solver(object):
                     x_fake_list.append(x_adv)
                     # x_fake_list.append(perturb)
                     x_fake_list.append(gen)
+                    x_fake_list.append(gen_noattack)
 
                     l1_error += F.l1_loss(gen, gen_noattack)
                     l2_error += F.mse_loss(gen, gen_noattack)
